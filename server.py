@@ -93,7 +93,7 @@ def bring_window_to_front(window_title_keyword):
     """
     try:
         # 等待一下，确保窗口标题已经加载完全
-        time.sleep(2) 
+        time.sleep(0.5)
         print(f"[DEBUG] 查找包含 '{window_title_keyword}' 的窗口...")
         
         # 查找标题中包含关键词的窗口
@@ -103,19 +103,40 @@ def bring_window_to_front(window_title_keyword):
         if windows:
             # 获取第一个匹配的窗口
             window = windows[0]
-            print(f"[DEBUG] 尝试激活窗口: '{window.title}'")
+            print(f"[DEBUG] 尝试操作窗口: '{window.title}'")
+            # 修复: 移除不存在的属性检查
+            print(f"[DEBUG] 窗口状态 - isMinimized: {window.isMinimized}, isMaximized: {window.isMaximized}")
+            
             # 检查窗口是否被最小化，如果是则恢复
             if window.isMinimized:
-                window.restore()
-            # 将窗口带到前台
-            window.activate()
-            print(f"[INFO] 窗口 '{window.title}' 已激活")
+                print(f"[DEBUG] 窗口 '{window.title}' 已最小化，正在恢复...")
+                window.restore() # 恢复窗口
+                time.sleep(1) # 等待恢复完成
+            else:
+                print(f"[DEBUG] 窗口 '{window.title}' 未最小化。")
+
+            # 检查窗口是否被最大化
+            if window.isMaximized:
+                print(f"[DEBUG] 窗口 '{window.title}' 已最大化。")
+            else:
+                print(f"[DEBUG] 窗口 '{window.title}' 未最大化。")
+
+            # 将窗口带到前台并激活
+            print(f"[DEBUG] 尝试激活窗口: '{window.title}'")
+            window.activate() # 激活窗口5
+            
+            # 尝试获取焦点 (在某些情况下可能更有效)
+            # window.focus() # 可选，如果 activate 不够
+            
+            print(f"[INFO] 窗口 '{window.title}' 已激活并带到前台")
             return True
         else:
             print(f"[INFO] 未找到标题包含 '{window_title_keyword}' 的窗口")
             return False
     except Exception as e:
         print(f"[ERROR] 激活窗口失败: {e}")
+        import traceback
+        traceback.print_exc() # 打印详细错误
         return False
 
 def send_play_pause_key():
@@ -183,30 +204,47 @@ def trigger_music():
         except Exception as e:
             print(f"[ERROR] 设置系统音量过程中发生异常: {e}")
 
-        # 4. 将网易云音乐窗口带到前台
-        print("[DEBUG] 开始查找并激活网易云音乐窗口...")
-        # 网易云音乐的窗口标题通常包含 "网易云音乐" 或 "CloudMusic"
-        window_found = bring_window_to_front("网易云音乐") or bring_window_to_front("CloudMusic")
-        if not window_found:
-            print("[WARNING] 未能找到并激活网易云音乐窗口，按键操作可能无效。")
-        else:
-            print("[DEBUG] 成功激活网易云音乐窗口")
+        # 4. (可选) 尝试将网易云音乐窗口带到前台 (如果需要，可以保留)
+        # print("[DEBUG] 开始查找并激活网易云音乐窗口...")
+        # # 网易云音乐的窗口标题通常是 "歌曲名 - 歌手名" 或包含 "网易云音乐" / "CloudMusic"
+        # # 尝试查找包含 " - " 的窗口，这通常是音乐播放器的格式
+        # # 或者尝试查找可能的通用关键词
+        # keywords_to_try = [
+        #     "网易云音乐", # 尝试主标题
+        #     "CloudMusic", # 尝试英文名
+        #     " - ",        # 尝试通用音乐格式 "歌曲名 - 歌手名"
+        #     "NetEase",    # 尝试品牌名
+        # ]
+        #
+        # window_found = False
+        # for keyword in keywords_to_try:
+        #     if bring_window_to_front(keyword):
+        #         window_found = True
+        #         break
+        #
+        # if not window_found:
+        #     print("[WARNING] 未能找到并激活网易云音乐窗口。")
+        # else:
+        #     print("[DEBUG] 成功激活网易云音乐窗口")
 
-        # 5. 稍作延迟，确保窗口已准备好接收按键
-        print("[DEBUG] 等待 1 秒，确保窗口就绪...")
+        # 5. 稍作延迟，确保程序已准备好接收快捷键 (可选，但建议)
+        print("[DEBUG] 等待 1 秒，确保程序就绪...")
         time.sleep(1)
 
-        # --- 新增：使用 Ctrl+P 播放/暂停 ---
-        print("[DEBUG] 准备发送播放/暂停命令 (Ctrl+P)...")
+        # --- 使用全局快捷键 Ctrl+Alt+P 播放/暂停 ---
+        print("[DEBUG] 准备发送全局播放/暂停命令 (Ctrl+Alt+P)...")
         try:
-            # 按下 Ctrl + P
-            keyboard_controller.press(Key.ctrl)
+            # 按下 Ctrl + Alt + P
+            keyboard_controller.press(Key.ctrl_l) # 使用左 Ctrl，避免干扰
+            keyboard_controller.press(Key.alt_l)  # 使用左 Alt，避免干扰
             keyboard_controller.press('p')
+            # 释放按键 (按相反顺序)
             keyboard_controller.release('p')
-            keyboard_controller.release(Key.ctrl)
-            print("[INFO] 播放/暂停命令已发送 (Ctrl+P)")
+            keyboard_controller.release(Key.alt_l)
+            keyboard_controller.release(Key.ctrl_l)
+            print("[INFO] 全局播放/暂停命令已发送 (Ctrl+Alt+P)")
         except Exception as e:
-            print(f"[ERROR] 发送播放/暂停按键过程中发生异常: {e}")
+            print(f"[ERROR] 发送全局播放/暂停按键过程中发生异常: {e}")
 
         print("[INFO] 音乐触发流程执行完毕")
         return json.dumps({"status": "success", "message": "Music playback triggered successfully"}), 200, {'Content-Type': 'application/json'}
