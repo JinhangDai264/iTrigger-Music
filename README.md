@@ -39,6 +39,3 @@
 
 ```bash
 pip install flask pygetwindow pyautogui pycaw
-
-
----
